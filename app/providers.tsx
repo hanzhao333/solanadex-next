@@ -8,10 +8,7 @@ import {
   WalletProvider,
 } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import {
-  PhantomWalletAdapter,
-  SolflareWalletAdapter,
-} from "@solana/wallet-adapter-wallets";
+import { PhantomExtWalletAdapter } from "../lib/PhantomExtWalletAdapter";
 import { useSettingsStore } from "../stores/settingsStore";
 
 if (typeof window !== "undefined") {
@@ -37,15 +34,12 @@ function SolanaConnectionShell({ children }: { children: ReactNode }) {
 }
 
 export function AppProviders({ children }: { children: ReactNode }) {
-  const wallets = useMemo(
-    () => [new PhantomWalletAdapter(), new SolflareWalletAdapter()],
-    [],
-  );
+  const wallets = useMemo(() => [new PhantomExtWalletAdapter()], []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <SolanaConnectionShell>
-        <WalletProvider wallets={wallets} autoConnect>
+        <WalletProvider wallets={wallets} autoConnect={false}>
           <WalletModalProvider>{children}</WalletModalProvider>
         </WalletProvider>
       </SolanaConnectionShell>

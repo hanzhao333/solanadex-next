@@ -9,3 +9,12 @@ body {
 body {
   @apply bg-slate-950 text-slate-100 antialiased;
 }
+
+/* Modal portals to body; keep it above the app shell and actually visible. */
+.wallet-adapter-modal {
+  z-index: 10000 !important;
+}
+
+.wallet-adapter-modal.wallet-adapter-modal-fade-in {
+  opacity: 1 !important;
+}

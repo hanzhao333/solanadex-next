@@ -4,8 +4,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import "@solana/wallet-adapter-react-ui/styles.css";
+import { ConnectWalletButton } from "./ConnectWalletButton";
 import { useSettingsStore } from "../stores/settingsStore";
 
 const nav = [
@@ -88,7 +87,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               title="RPC is applied when you leave the field or press Enter"
               className="min-w-[180px] max-w-xs rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs"
             />
-            <WalletMultiButton className="bg-emerald-600! hover:bg-emerald-500! h-9!" />
+            <ConnectWalletButton />
           </div>
         </div>
       </header>
