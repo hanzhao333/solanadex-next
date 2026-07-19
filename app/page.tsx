@@ -10,9 +10,8 @@ export default function Home() {
         solanaDex
       </h1>
       <p className="max-w-xl text-base leading-relaxed text-slate-400">
-        Next.js App Router 前台：顶栏连钱包；Swap 走 Jupiter 报价与签名；Pool
-        页已用 SSR 展示 trade-hub 池子列表（GET /dex/pools）。Swap 入库（POST
-        /dex/swaps）留给 D25。
+        Next.js App Router 前台：顶栏连钱包；Swap 走 Jupiter 报价与签名并入库；
+        History 查看 GET /dex/swaps；Pool 页 SSR 展示池子列表。
       </p>
       <div className="flex flex-wrap items-center gap-3">
         <Link
@@ -22,13 +21,19 @@ export default function Home() {
           进入 Swap
         </Link>
         <Link
+          href="/history"
+          className="rounded-xl border border-slate-600 px-5 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-800"
+        >
+          查看 Swap 历史
+        </Link>
+        <Link
           href="/pool"
           className="rounded-xl border border-slate-600 px-5 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-800"
         >
           查看 Pool 列表
         </Link>
         <span className="text-sm text-slate-500">
-          钱包按钮在右上角（Client 组件）
+          钱包 / API 登录在右上角
         </span>
       </div>
     </section>

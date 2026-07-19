@@ -1,10 +1,12 @@
 import { CandlesChart } from "../../features/trade/CandlesChart";
 import { DepthChart } from "../../features/trade/DepthChart";
+import { LiveTicker } from "../../features/trade/LiveTicker";
 import { TxFeed } from "../../features/trade/TxFeed";
 
 export default function TradePage() {
   return (
     <div className="space-y-8">
+      <LiveTicker />
       <p className="text-sm text-slate-400">
         Charts use mock market data for layout demos. Transaction history uses{" "}
         <code className="text-slate-300">getSignaturesForAddress</code> with

@@ -10,6 +10,7 @@ import { useSettingsStore } from "../stores/settingsStore";
 
 const nav = [
   { to: "/swap", label: "Swap" },
+  { to: "/history", label: "History" },
   { to: "/pool", label: "Liquidity" },
   { to: "/trade", label: "Trade" },
 ];
