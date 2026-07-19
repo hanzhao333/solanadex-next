@@ -22,6 +22,11 @@ const queryClient = new QueryClient({
 });
 
 function SolanaConnectionShell({ children }: { children: ReactNode }) {
+  // Subscribe so endpoint updates when cluster / custom RPC change.
+  // Do not remount with a key — that tears down WalletProvider and leaves a
+  // selected-but-disconnected wallet, which makes "Select Wallet" look dead.
+  useSettingsStore((s) => s.cluster);
+  useSettingsStore((s) => s.customRpcUrl);
   const endpoint = useSettingsStore((s) => s.effectiveRpcUrl());
   return (
     <ConnectionProvider

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AuthButton } from "./AuthButton";
 import { ConnectWalletButton } from "./ConnectWalletButton";
 import { useSettingsStore } from "../stores/settingsStore";
 
@@ -29,14 +30,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-6">
             <Link
-              href="/swap"
+              href="/"
               className="text-lg font-bold tracking-tight text-emerald-400"
             >
               Solana DEX
             </Link>
             <nav className="flex gap-1">
               {nav.map((item) => {
-                const isActive = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                const isActive =
+                  pathname === item.to || pathname.startsWith(`${item.to}/`);
 
                 return (
                   <Link
@@ -83,10 +85,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") (e.target as HTMLInputElement).blur();
               }}
-              placeholder="Custom RPC — blur or Enter to apply"
-              title="RPC is applied when you leave the field or press Enter"
+              placeholder="Custom RPC (optional) — blur/Enter"
+              title="若出现 RPC 403，可填 Helius/Alchemy 等免费节点；留空用默认 publicnode"
               className="min-w-[180px] max-w-xs rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs"
             />
+            <AuthButton />
             <ConnectWalletButton />
           </div>
         </div>

@@ -31,6 +31,10 @@ export async function loadRaydium(params: {
     owner: wallet.publicKey,
     signAllTransactions: wallet.signAllTransactions,
     disableFeatureCheck: true,
+    // Skip Raydium V3 token list (large + often times out from CN).
+    // PoolPanel passes mint/decimals via tokenMetaMint; full list is unused.
+    disableLoadToken: true,
+    apiRequestTimeout: 30_000,
   })
 }
 

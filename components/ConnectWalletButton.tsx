@@ -13,6 +13,12 @@ import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { flushSync } from "react-dom";
 import { PhantomExtWalletName } from "../lib/PhantomExtWalletAdapter";
+import { useSettingsStore } from "../stores/settingsStore";
+
+const CONNECT_TIMEOUT_MS = 22_000;
+const CONNECT_TIMEOUT_MSG = "钱包连接超时，请解锁钱包扩展后重试。";
+const UNSAFE_ORIGIN_MSG =
+  "Phantom 不会在普通 HTTP 局域网地址上弹出授权。请在本机打开 http://localhost:3000；如需其他设备访问，请使用 HTTPS 域名。";
 
 function useIsClient() {
   return useSyncExternalStore(
@@ -75,16 +81,18 @@ export function ConnectWalletButton() {
     wallets,
     connected,
     connecting,
-    connect,
     disconnect,
     select,
   } = useWallet();
+  const cluster = useSettingsStore((s) => s.cluster);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const connectLockRef = useRef(false);
+  const prevClusterRef = useRef(cluster);
 
+  // Prefer custom "Phantom Ext"; hide stock Standard "Phantom" to avoid duplicates.
   const listed = useMemo(
     () =>
       wallets.filter(
@@ -95,6 +103,25 @@ export function ConnectWalletButton() {
     [wallets],
   );
 
+  // Cluster switch (not first mount): clear sticky state and force re-pick wallet.
+  useEffect(() => {
+    if (prevClusterRef.current === cluster) return;
+    prevClusterRef.current = cluster;
+
+    connectLockRef.current = false;
+    setBusy(false);
+    setOpen(false);
+    setError(null);
+    void (async () => {
+      try {
+        if (connected) await disconnect();
+      } catch {
+        // ignore
+      }
+      select(null);
+    })();
+  }, [cluster, connected, disconnect, select]);
+
   useEffect(() => {
     if (!open) return;
     const onDoc = (event: MouseEvent) => {
@@ -104,57 +131,53 @@ export function ConnectWalletButton() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
+  const runConnect = useCallback(async (task: () => Promise<unknown>) => {
+    if (connectLockRef.current) return;
+    connectLockRef.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      await withTimeout(task(), CONNECT_TIMEOUT_MS, CONNECT_TIMEOUT_MSG);
+    } catch (e) {
+      setError(formatWalletError(e));
+    } finally {
+      connectLockRef.current = false;
+      setBusy(false);
+    }
+  }, []);
+
   const selectAdapter = useCallback(
     async (name: WalletName) => {
-      if (connectLockRef.current) return;
-
       const target = wallets.find((w) => w.adapter.name === name);
-      setError(null);
-
       if (!target) {
         setError("钱包不可用");
         return;
       }
 
       if (name === PhantomExtWalletName && !isWalletSafeOrigin()) {
-        setError(
-          "Phantom 不会在普通 HTTP 局域网地址上弹出授权。请在本机打开 http://localhost:3000；如需其他设备访问，请使用 HTTPS 域名。",
-        );
+        setError(UNSAFE_ORIGIN_MSG);
         setOpen(false);
         return;
       }
 
-      // Commit the selected adapter before connect() without adding a timer.
-      // A timer loses the browser user gesture needed by wallet popups.
+      // Commit selection in the same click tick so the wallet popup keeps the user gesture.
       flushSync(() => {
         select(name);
       });
       setOpen(false);
-      connectLockRef.current = true;
-      setBusy(true);
-      try {
-        await withTimeout(
-          target.adapter.connect(),
-          22_000,
-          "钱包连接超时，请解锁钱包扩展后重试。",
-        );
 
-        // React may attach WalletProvider listeners just after select().
-        // Re-emit once connected so a very fast adapter cannot be missed.
+      await runConnect(async () => {
+        await target.adapter.connect();
+        // Re-emit if WalletProvider listeners attach just after a fast connect.
         if (target.adapter.publicKey) {
           await new Promise<void>((resolve) => {
             window.setTimeout(resolve, 0);
           });
           target.adapter.emit("connect", target.adapter.publicKey);
         }
-      } catch (e) {
-        setError(formatWalletError(e));
-      } finally {
-        connectLockRef.current = false;
-        setBusy(false);
-      }
+      });
     },
-    [wallets, select],
+    [wallets, select, runConnect],
   );
 
   const onPrimaryClick = useCallback(async () => {
@@ -169,35 +192,16 @@ export function ConnectWalletButton() {
       return;
     }
 
-    if (connectLockRef.current || busy || connecting) return;
-
-    if (!wallet) {
-      setOpen((v) => !v);
-      return;
-    }
-
-    if (wallet.adapter.name === PhantomExtWalletName && !isWalletSafeOrigin()) {
-      setError(
-        "Phantom 不会在普通 HTTP 局域网地址上弹出授权。请在本机打开 http://localhost:3000；如需其他设备访问，请使用 HTTPS 域名。",
-      );
-      return;
-    }
-
-    connectLockRef.current = true;
-    setBusy(true);
-    try {
-      await withTimeout(
-        connect(),
-        22_000,
-        "钱包连接超时，请解锁钱包扩展后重试。",
-      );
-    } catch (e) {
-      setError(formatWalletError(e));
-    } finally {
+    // Stale "Connecting…" after a cluster switch / hung connect — allow reopen.
+    if (connectLockRef.current || busy) {
       connectLockRef.current = false;
       setBusy(false);
     }
-  }, [connected, connecting, busy, wallet, connect, disconnect]);
+
+    // Always open the picker when disconnected. Silent connect() with a leftover
+    // selected wallet (common after remount / cluster change) looks like no-op.
+    setOpen((v) => !v);
+  }, [connected, busy, disconnect]);
 
   if (!isClient) {
     return (

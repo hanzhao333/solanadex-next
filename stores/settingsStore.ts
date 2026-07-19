@@ -5,8 +5,10 @@ import { persist } from "zustand/middleware";
 
 export type SolanaCluster = "mainnet" | "devnet";
 
+// Official public RPC often returns 403 from browsers (rate-limit / WAF).
+// publicnode is a free public endpoint suitable for local demos; for production use Helius/Alchemy + API key.
 export const DEFAULT_RPC = {
-  mainnet: "https://api.mainnet-beta.solana.com",
+  mainnet: "https://solana-rpc.publicnode.com",
   devnet: "https://api.devnet.solana.com",
 } as const;
 
